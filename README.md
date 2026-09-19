@@ -114,9 +114,12 @@ myscoutee-client unwatch
 ```
 
 Production callbacks must use HTTPS and resolve to a public address. Delivery
-uses a durable queue, treats every 2xx response as success, does not follow
-redirects, and retries after approximately 5 seconds, 30 seconds, 2 minutes
-and 10 minutes. Receivers should deduplicate by `deliveryId` or the identical
+uses a durable queue and an elastic worker pool (zero idle workers, scaling to
+at most 100 parallel deliveries), so callback HTTP traffic never runs on the
+Join/request thread and independent client destinations can be served in
+parallel. Every 2xx response is success, redirects are not followed, and
+failures retry after approximately 5 seconds, 30 seconds, 2 minutes and 10
+minutes. Receivers should deduplicate by `deliveryId` or the identical
 `X-MyScoutee-Webhook-Id` header.
 
 Both calls return one result per item:

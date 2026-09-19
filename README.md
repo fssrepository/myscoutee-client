@@ -38,6 +38,16 @@ By default the CLI stores one token and its client UUID in `~/.myscoutee/client.
 | Connect and claim token | `POST /connect` | one client UUID per token |
 | Create assets | `POST /assets` | 1–1000 items per request |
 | Create events | `POST /events` | 1–1000 items per request |
+| Register or disable callback | `POST /watch` | one callback per claimed token/client |
+
+The watch endpoint is a callback registration, not a polling or general read
+API. MyScoutee posts `event.changed` only for events managed by the token owner
+and `asset.changed` only for assets owned by that user. A normal participant
+Join also triggers `event.changed`. The callback contains the caller's `id`
+when the resource originated through this API, the MyScoutee `externalId`, a
+small resource snapshot, and for membership changes only the participant's
+name, age, gender and first profile image. It never includes an e-mail address
+or internal user id.
 
 The 1000-item limit applies to one request only. Clients may send later batches and the three client slots may operate concurrently.
 
@@ -90,6 +100,25 @@ myscoutee-client assets assets.json
 myscoutee-client events events.json
 ```
 
+Register both callback types (the default when the list is omitted):
+
+```bash
+myscoutee-client watch https://integration.example.test/hooks/myscoutee
+```
+
+Register only event callbacks, or disable the current client's callback:
+
+```bash
+myscoutee-client watch https://integration.example.test/hooks/myscoutee event.changed
+myscoutee-client unwatch
+```
+
+Production callbacks must use HTTPS and resolve to a public address. Delivery
+uses a durable queue, treats every 2xx response as success, does not follow
+redirects, and retries after approximately 5 seconds, 30 seconds, 2 minutes
+and 10 minutes. Receivers should deduplicate by `deliveryId` or the identical
+`X-MyScoutee-Webhook-Id` header.
+
 Both calls return one result per item:
 
 ```json
@@ -136,6 +165,10 @@ The repository includes payloads that are also exercised by the automated client
 | `src/test/resources/fixtures/duplicate-id.json` | Per-item rejection for a duplicate UUID in one batch |
 | `src/test/resources/fixtures/assets-required-fields.json` | Asset form-required field rejection cases |
 | `src/test/resources/fixtures/events-required-fields.json` | Event form-required field rejection cases |
+| `src/test/resources/fixtures/watch.json` | Watch callback registration example |
+| `src/test/resources/fixtures/qa-api-asset.json` | Single Asset used by the assembled-stack API checkpoint |
+| `src/test/resources/fixtures/qa-api-event.json` | Single public Event used by the assembled-stack API checkpoint |
+| `src/test/resources/fixtures/integration-api-qa.png` | Generated image uploaded with both API checkpoint resources |
 | `src/test/resources/fixtures/invalid-id.json` | Non-UUID caller ID rejection case |
 | `src/test/resources/fixtures/malformed.json` | Deliberately incomplete JSON syntax error case |
 
@@ -144,4 +177,9 @@ After configuration, the same files can be sent with the CLI:
 ```bash
 myscoutee-client assets src/test/resources/fixtures/assets.json
 myscoutee-client events src/test/resources/fixtures/events.json
+
+myscoutee-client assets src/test/resources/fixtures/qa-api-asset.json \
+  1f2f24d2-d14c-43ce-a27f-67270ae93d4a=src/test/resources/fixtures/integration-api-qa.png
+myscoutee-client events src/test/resources/fixtures/qa-api-event.json \
+  a3b891c2-1a45-4fe8-b8c2-c217c22466b4=src/test/resources/fixtures/integration-api-qa.png
 ```

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: MyScoutee Integration API
   version: 1.0.1
-  description: Batch write API for external asset and event systems.
+  description: Batch write and callback API for external asset and event systems.
 servers:
   - url: https://example.com/api/integrations/v1
 security:
@@ -22,6 +22,32 @@ paths:
                 $ref: '#/components/schemas/ConnectResponse'
         '401':
           description: Missing, invalid, expired, revoked, or occupied token
+  /watch:
+    post:
+      summary: Register or disable this client's callback
+      description: >-
+        Each claimed token/client pair has one callback registration. MyScoutee
+        posts compact event.changed and asset.changed messages for resources
+        managed or owned by the token owner. Send enabled=false to disable it.
+        Production callback URLs must use HTTPS and resolve to a public address.
+      operationId: configureWatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WatchRequest'
+      responses:
+        '200':
+          description: Current callback registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchResponse'
+        '400':
+          description: Invalid callback URL or event type
+        '401':
+          description: Authentication or client claim failed
   /assets:
     post:
       summary: Create up to 1000 assets
@@ -124,6 +150,27 @@ paths:
           description: Invalid batch
         '401':
           description: Authentication or client claim failed
+webhooks:
+  resourceChanged:
+    post:
+      summary: Asset or event change delivered to the registered callback URL
+      parameters:
+        - in: header
+          name: X-MyScoutee-Webhook-Id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Equals deliveryId and is the receiver's deduplication key.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookMessage'
+      responses:
+        '2XX':
+          description: Delivery accepted; any 2xx response stops retries.
 components:
   securitySchemes:
     bearerToken:
@@ -145,6 +192,92 @@ components:
         maxBatchSize:
           type: integer
           const: 1000
+    WatchRequest:
+      type: object
+      properties:
+        callbackUrl:
+          type: [string, 'null']
+          format: uri
+          description: Required when enabled is true.
+        events:
+          type: array
+          items:
+            type: string
+            enum: [event.changed, asset.changed]
+          description: Empty or omitted means both supported event types.
+        enabled:
+          type: boolean
+          default: true
+    WatchResponse:
+      type: object
+      required: [enabled, events]
+      properties:
+        enabled:
+          type: boolean
+        callbackUrl:
+          type: [string, 'null']
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum: [event.changed, asset.changed]
+    WebhookMessage:
+      type: object
+      required: [deliveryId, type, occurredAt, resource]
+      properties:
+        deliveryId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [event.changed, asset.changed]
+        occurredAt:
+          type: string
+          format: date-time
+        resource:
+          type: object
+          required: [externalId]
+          properties:
+            id:
+              type: [string, 'null']
+              format: uuid
+              description: Caller-owned request UUID when the resource originated through this API.
+            externalId:
+              type: string
+              format: uuid
+              description: MyScoutee resource UUID.
+            title:
+              type: [string, 'null']
+            status:
+              type: [string, 'null']
+            change:
+              type: object
+              description: Present for a participant join or membership-state change.
+              properties:
+                kind:
+                  type: string
+                  const: participant
+                status:
+                  type: [string, 'null']
+                role:
+                  type: [string, 'null']
+                actionAt:
+                  type: [string, 'null']
+                  format: date-time
+                participant:
+                  type: object
+                  description: Minimal participant projection; no email address or internal user id.
+                  properties:
+                    name:
+                      type: [string, 'null']
+                    age:
+                      type: [integer, 'null']
+                    gender:
+                      type: [string, 'null']
+                    profileImage:
+                      type: [string, 'null']
+                      format: uri-reference
     AssetBatchRequest:
       type: object
       required: [items]

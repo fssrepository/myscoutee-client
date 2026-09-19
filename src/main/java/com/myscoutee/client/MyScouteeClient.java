@@ -50,6 +50,20 @@ public final class MyScouteeClient {
         return post("/connect", objectMapper.createObjectNode(), ConnectResponse.class);
     }
 
+    public WatchResponse watch(String callbackUrl, List<String> events) {
+        if (callbackUrl == null || callbackUrl.isBlank()) {
+            throw new IllegalArgumentException("callbackUrl is required");
+        }
+        return post(
+                "/watch",
+                new WatchRequest(callbackUrl.trim(), events == null ? List.of() : List.copyOf(events), true),
+                WatchResponse.class);
+    }
+
+    public WatchResponse unwatch() {
+        return post("/watch", new WatchRequest(null, List.of(), false), WatchResponse.class);
+    }
+
     public BatchResponse createAssets(List<AssetItem> items) {
         requireBatch(items);
         return post("/assets", new BatchRequest<>(items), BatchResponse.class);
@@ -240,6 +254,12 @@ public final class MyScouteeClient {
     }
 
     public record ConnectResponse(boolean connected, int maxBatchSize) {
+    }
+
+    public record WatchRequest(String callbackUrl, List<String> events, boolean enabled) {
+    }
+
+    public record WatchResponse(boolean enabled, String callbackUrl, List<String> events) {
     }
 
     public record BatchRequest<T>(List<T> items) {

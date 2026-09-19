@@ -1,0 +1,8 @@
+{
+  "callbackUrl": "https://integration.example.test/hooks/myscoutee",
+  "events": [
+    "event.changed",
+    "asset.changed"
+  ],
+  "enabled": true
+}

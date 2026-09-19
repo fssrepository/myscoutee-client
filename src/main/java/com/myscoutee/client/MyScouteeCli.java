@@ -8,6 +8,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Properties;
+import java.util.Arrays;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +47,8 @@ public final class MyScouteeCli {
             case "connect" -> printJson(client().connect());
             case "assets" -> createFile(args, true);
             case "events" -> createFile(args, false);
+            case "watch" -> watch(args);
+            case "unwatch" -> printJson(client().unwatch());
             case "show-config" -> showConfig();
             default -> throw new IllegalArgumentException("Unknown command: " + args[0]);
         }
@@ -93,6 +97,20 @@ public final class MyScouteeCli {
                 ? api.createAssets(request, images)
                 : api.createEvents(request, images);
         printJson(response);
+    }
+
+    private static void watch(String[] args) throws IOException {
+        if (args.length < 2 || args.length > 3) {
+            throw new IllegalArgumentException(
+                    "Usage: myscoutee-client watch <callback-url> [event.changed,asset.changed]");
+        }
+        List<String> events = args.length == 2
+                ? List.of()
+                : Arrays.stream(args[2].split(","))
+                        .map(String::trim)
+                        .filter(value -> !value.isEmpty())
+                        .toList();
+        printJson(client().watch(args[1], events));
     }
 
     private static void showConfig() throws IOException {
@@ -161,6 +179,8 @@ public final class MyScouteeCli {
                   connect
                   assets <request.json> [<item-id>=<image-file> ...]
                   events <request.json> [<item-id>=<image-file> ...]
+                  watch <callback-url> [event.changed,asset.changed]
+                  unwatch
                   show-config
                 """);
     }

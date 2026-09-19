@@ -182,6 +182,48 @@ class MyScouteeClientTest {
     }
 
     @Test
+    void watchRegistersAndUnregistersTheCallbackForTheSameClient() throws IOException {
+        AtomicReference<String> registered = new AtomicReference<>();
+        AtomicReference<String> unregistered = new AtomicReference<>();
+        server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        server.createContext("/api/integrations/v1/watch", exchange -> {
+            String request = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            JsonNode body = readTree(request);
+            boolean enabled = body.path("enabled").asBoolean();
+            if (enabled) {
+                registered.set(request);
+            } else {
+                unregistered.set(request);
+            }
+            byte[] response = enabled
+                    ? ("{\"enabled\":true,\"callbackUrl\":\"https://example.test/hooks/myscoutee\","
+                            + "\"events\":[\"event.changed\"]}").getBytes(StandardCharsets.UTF_8)
+                    : "{\"enabled\":false,\"callbackUrl\":null,\"events\":[]}"
+                            .getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, response.length);
+            exchange.getResponseBody().write(response);
+            exchange.close();
+        });
+        server.start();
+        MyScouteeClient client = new MyScouteeClient(new MyScouteeClientConfig(
+                URI.create("http://localhost:" + server.getAddress().getPort() + "/api/integrations/v1"),
+                "msc_secret",
+                UUID.randomUUID()));
+
+        MyScouteeClient.WatchResponse watch = client.watch(
+                "https://example.test/hooks/myscoutee",
+                List.of("event.changed"));
+        MyScouteeClient.WatchResponse unwatch = client.unwatch();
+
+        assertEquals(true, watch.enabled());
+        assertEquals(List.of("event.changed"), watch.events());
+        assertEquals(false, unwatch.enabled());
+        assertEquals("https://example.test/hooks/myscoutee", readTree(registered.get()).path("callbackUrl").asText());
+        assertEquals(false, readTree(unregistered.get()).path("enabled").asBoolean());
+    }
+
+    @Test
     void imageIsUploadedOnTheSameAssetEndpointUnderItsItemId() throws IOException {
         AtomicReference<String> contentType = new AtomicReference<>();
         AtomicReference<byte[]> requestBody = new AtomicReference<>();

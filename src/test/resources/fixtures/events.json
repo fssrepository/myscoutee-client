@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "id": "1066b61b-c0ac-43d5-ab28-f588f5a162f6",
+      "title": "Integration test hotel evening",
+      "subtitle": "Client fixture event",
+      "startAt": "2026-10-10T18:00:00Z",
+      "endAt": "2026-10-10T20:00:00Z",
+      "location": "Bratislava",
+      "capacityMin": 1,
+      "capacityMax": 30,
+      "visibility": "Private",
+      "status": "draft",
+      "topics": ["hospitality"]
+    },
+    {
+      "id": "51781576-d60c-4384-986c-e6a6d6e47ce5",
+      "title": "Integration test breakfast",
+      "subtitle": "Client fixture breakfast event",
+      "startAt": "2026-10-11T07:00:00Z",
+      "endAt": "2026-10-11T09:00:00Z",
+      "location": "Bratislava",
+      "capacityMin": 1,
+      "capacityMax": 20,
+      "visibility": "Private",
+      "status": "draft",
+      "topics": ["hospitality"]
+    }
+  ]
+}

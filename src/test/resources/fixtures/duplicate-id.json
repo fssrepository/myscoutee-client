@@ -1,0 +1,18 @@
+{
+  "items": [
+    {
+      "id": "d2375a18-637b-489a-a551-fffc0d18f7d7",
+      "type": "Supplies",
+      "title": "First duplicate",
+      "capacityTotal": 1,
+      "quantity": 1
+    },
+    {
+      "id": "d2375a18-637b-489a-a551-fffc0d18f7d7",
+      "type": "Supplies",
+      "title": "Second duplicate",
+      "capacityTotal": 1,
+      "quantity": 1
+    }
+  ]
+}

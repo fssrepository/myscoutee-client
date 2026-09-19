@@ -1,0 +1,17 @@
+{
+  "items": [
+    {
+      "id": "1f2f24d2-d14c-43ce-a27f-67270ae93d4a",
+      "type": "Supplies",
+      "title": "API QA welcome projector",
+      "subtitle": "Created through the Java integration client",
+      "category": "Tech",
+      "city": "Austin",
+      "capacityTotal": 1,
+      "quantity": 1,
+      "details": "INTEGRATION-API-001 release verification asset",
+      "routes": [],
+      "visibility": "Public"
+    }
+  ]
+}

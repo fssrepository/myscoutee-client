@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "id": "be5a2c79-94b3-4fa4-8d75-e2c1d42fe82f",
+      "title": "Missing description",
+      "subtitle": "",
+      "startAt": "2026-11-01T10:00:00Z",
+      "endAt": "2026-11-01T11:00:00Z",
+      "capacityMin": 1,
+      "capacityMax": 10
+    },
+    {
+      "id": "d30a3aa6-ab0d-4186-8735-0930c9c460f7",
+      "title": "Invalid minimum",
+      "subtitle": "Negative minimum capacity",
+      "startAt": "2026-11-01T10:00:00Z",
+      "endAt": "2026-11-01T11:00:00Z",
+      "capacityMin": -1,
+      "capacityMax": 10
+    },
+    {
+      "id": "4c914986-957b-4afc-81af-17167f270157",
+      "title": "Invalid range",
+      "subtitle": "Maximum below minimum",
+      "startAt": "2026-11-01T10:00:00Z",
+      "endAt": "2026-11-01T11:00:00Z",
+      "capacityMin": 10,
+      "capacityMax": 9
+    }
+  ]
+}

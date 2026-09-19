@@ -1,0 +1,17 @@
+{
+  "items": [
+    {
+      "id": "a3b891c2-1a45-4fe8-b8c2-c217c22466b4",
+      "title": "API QA Austin meetup",
+      "subtitle": "Created through the Java integration client",
+      "startAt": "2026-10-10T18:00:00Z",
+      "endAt": "2026-10-10T20:00:00Z",
+      "location": "Austin",
+      "capacityMin": 1,
+      "capacityMax": 30,
+      "visibility": "Public",
+      "status": "active",
+      "topics": ["integration", "qa"]
+    }
+  ]
+}

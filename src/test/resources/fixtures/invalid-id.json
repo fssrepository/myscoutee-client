@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "id": "hotel-room-101",
+      "type": "Accommodation",
+      "title": "Invalid UUID example",
+      "category": "Room",
+      "capacityTotal": 1,
+      "quantity": 1,
+      "routes": [],
+      "visibility": "Private"
+    }
+  ]
+}

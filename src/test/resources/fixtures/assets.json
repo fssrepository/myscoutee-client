@@ -1,0 +1,27 @@
+{
+  "items": [
+    {
+      "id": "7d857d7f-8d48-4cf1-95cc-cbf257640afa",
+      "type": "Accommodation",
+      "title": "Integration test room 101",
+      "subtitle": "Two-bed room",
+      "category": "Room",
+      "city": "Bratislava",
+      "capacityTotal": 2,
+      "quantity": 1,
+      "details": "Versioned Java client fixture",
+      "routes": ["Bratislava"],
+      "visibility": "Private"
+    },
+    {
+      "id": "fdc69f0d-ea88-4c69-8a88-39ab2ec7f47d",
+      "type": "Supplies",
+      "title": "Integration test projector",
+      "category": "Tech",
+      "capacityTotal": 1,
+      "quantity": 1,
+      "routes": [],
+      "visibility": "Private"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "items": [
+    {
+      "id": "27fba347-c4da-47ba-b2d4-961a04bb2e1d",
+      "type": "Supplies",
+      "title": "",
+      "capacityTotal": 1,
+      "quantity": 1
+    },
+    {
+      "id": "42659322-92aa-4ffd-aed8-25f9937a09bd",
+      "type": "Accommodation",
+      "title": "Missing accommodation location",
+      "capacityTotal": 1,
+      "quantity": 1,
+      "routes": []
+    },
+    {
+      "id": "be58802e-15fd-4919-8af2-35e9083a0c3e",
+      "type": "Transport",
+      "title": "Invalid capacity",
+      "capacityTotal": 0,
+      "quantity": 1
+    },
+    {
+      "id": "b2942844-e6ca-4083-846c-a56a28ec7cb3",
+      "type": "Supplies",
+      "title": "Invalid quantity",
+      "capacityTotal": 1,
+      "quantity": 0
+    }
+  ]
+}

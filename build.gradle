@@ -1,0 +1,35 @@
+plugins {
+    id 'application'
+    id 'java-library'
+}
+
+group = 'com.myscoutee'
+version = '1.0.1'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    withSourcesJar()
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation platform('com.fasterxml.jackson:jackson-bom:2.20.0')
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    testImplementation platform('org.junit:junit-bom:5.13.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+application {
+    mainClass = 'com.myscoutee.client.MyScouteeCli'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

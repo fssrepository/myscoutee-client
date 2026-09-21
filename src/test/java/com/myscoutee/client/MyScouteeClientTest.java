@@ -64,6 +64,47 @@ class MyScouteeClientTest {
     }
 
     @Test
+    void createsMingleWithOrganizerLinkAndReadsDetailsEncountersAndInvites() throws IOException {
+        AtomicReference<JsonNode> submitted = new AtomicReference<>();
+        var json = new ObjectMapper();
+        server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        server.createContext("/api/integrations/v1/events", exchange -> {
+            String path = exchange.getRequestURI().getPath();
+            String response;
+            if (path.endsWith("/encounters")) {
+                assertEquals("GET", exchange.getRequestMethod());
+                assertEquals("offset=0&limit=1000", exchange.getRequestURI().getQuery());
+                response = "{\"id\":\"partner-event\",\"externalId\":\"event\",\"revision\":7,\"pairs\":[],\"total\":0,\"nextOffset\":null}";
+            } else if (path.endsWith("/invites")) {
+                JsonNode request = json.readTree(exchange.getRequestBody());
+                assertEquals("partner-42", request.path("participantIds").get(0).asText());
+                response = "{\"items\":[{\"id\":\"partner-42\",\"inviteUrl\":\"https://example.test/game?partnerInvite=opaque\",\"claimed\":false}]}";
+            } else if (exchange.getRequestMethod().equals("GET")) {
+                response = "{\"id\":\"partner-event\",\"externalId\":\"event\",\"title\":\"Mingle\",\"status\":\"A\",\"sourceLink\":\"https://organizer.test/event\",\"mode\":\"Mingle\",\"mingleConfiguration\":{\"groupSize\":2,\"plannedRounds\":3,\"roundDurationMinutes\":10,\"breakDurationMinutes\":2,\"requireGenderBalance\":false}}";
+            } else {
+                submitted.set(json.readTree(exchange.getRequestBody()));
+                response = "{\"items\":[{\"id\":\"partner-event\",\"externalId\":\"event\",\"result\":\"created\",\"error\":null}]}";
+            }
+            byte[] body = response.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+        var client = new MyScouteeClient(new MyScouteeClientConfig(URI.create("http://localhost:" + server.getAddress().getPort() + "/api/integrations/v1"), "msc_test", UUID.randomUUID()));
+        var config = new MyScouteeClient.MingleConfiguration(2, 3, 10, 2, false);
+        client.createEvents(List.of(new MyScouteeClient.EventItem(UUID.randomUUID().toString(), "Mingle", "Meet", "2030-01-01T10:00:00Z", "2030-01-01T12:00:00Z", "Budapest", 2, 20, "Public", "active", "https://organizer.test/event", List.of(), "Mingle", config)));
+        JsonNode item = submitted.get().path("items").get(0);
+        assertEquals("Mingle", item.path("mode").asText());
+        assertEquals("https://organizer.test/event", item.path("sourceLink").asText());
+        assertEquals(2, item.path("mingleConfiguration").path("groupSize").asInt());
+        assertEquals(config, client.event("event").mingleConfiguration());
+        assertEquals("https://organizer.test/event", client.event("event").sourceLink());
+        assertEquals(7, client.encounters("event", 0, 1000).revision());
+        assertEquals("partner-42", client.inviteParticipants("event", List.of("partner-42")).items().get(0).id());
+    }
+
+    @Test
     void missingTokenIsRejectedBeforeARequestCanBeSent() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,

@@ -2,13 +2,80 @@ openapi: 3.1.0
 info:
   title: MyScoutee Integration API
   version: 1.0.1
-  description: Batch write and callback API for external asset and event systems.
+  description: Batch write, owner-scoped event read and callback API for external asset and event systems.
 servers:
   - url: https://example.com/api/integrations/v1
 security:
   - bearerToken: []
     clientId: []
 paths:
+  /events/{externalId}:
+    get:
+      summary: Read a managed event including its organizer link and Mingle configuration
+      operationId: event
+      parameters:
+        - name: externalId
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Managed event
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EventResponse'}
+        '404': {description: Event not found or not managed by the token owner}
+  /events/{externalId}/encounters:
+    get:
+      summary: Read unique pairs from completed Speed meeting table rounds
+      operationId: encounters
+      parameters:
+        - name: externalId
+          in: path
+          required: true
+          schema: {type: string}
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, default: 0}
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 1000, default: 1000}
+      responses:
+        '200':
+          description: Completed encounters page; repeat with nextOffset while non-null
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EncountersResponse'}
+        '404': {description: Event not found or not managed by the token owner}
+        '409': {description: Mingle has not completed}
+  /events/{externalId}/invites:
+    post:
+      summary: Create claimable participant invitation links for a managed event
+      description: >-
+        Repeating the same organizer/event/participant ID returns the same link.
+        Opening the link requires application sign-in or registration. Claiming
+        binds the participant ID to that account and creates an ordinary pending
+        event invitation; it does not accept participation or bypass payment.
+      operationId: inviteParticipants
+      parameters:
+        - name: externalId
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ParticipantInviteRequest'}
+      responses:
+        '200':
+          description: Invitation links in request order
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ParticipantInvitesResponse'}
+        '400': {description: Invalid participant IDs or batch size}
+        '403': {description: Event invitation is not permitted}
+        '404': {description: Event not found or not managed by the token owner}
   /connect:
     post:
       summary: Claim a token for this client and validate the connection
@@ -27,7 +94,7 @@ paths:
       summary: Register or disable this client's callback
       description: >-
         Each claimed token/client pair has one callback registration. MyScoutee
-        posts compact event.changed and asset.changed messages for resources
+        posts event.changed, asset.changed and explicitly selected event.encounters messages for resources
         managed or owned by the token owner. Send enabled=false to disable it.
         Production callback URLs must use HTTPS and resolve to a public address.
       operationId: configureWatch
@@ -203,8 +270,8 @@ components:
           type: array
           items:
             type: string
-            enum: [event.changed, asset.changed]
-          description: Empty or omitted means both supported event types.
+            enum: [event.changed, asset.changed, event.encounters]
+          description: Empty or omitted selects event.changed and asset.changed. Subscribe explicitly to event.encounters before session completion.
         enabled:
           type: boolean
           default: true
@@ -221,7 +288,7 @@ components:
           type: array
           items:
             type: string
-            enum: [event.changed, asset.changed]
+            enum: [event.changed, asset.changed, event.encounters]
     WebhookMessage:
       type: object
       required: [deliveryId, type, occurredAt, resource]
@@ -231,7 +298,7 @@ components:
           format: uuid
         type:
           type: string
-          enum: [event.changed, asset.changed]
+          enum: [event.changed, asset.changed, event.encounters]
         occurredAt:
           type: string
           format: date-time
@@ -251,6 +318,26 @@ components:
               type: [string, 'null']
             status:
               type: [string, 'null']
+            sourceLink:
+              type: [string, 'null']
+              description: Organizer event-page link in event.changed snapshots.
+            mode:
+              type: string
+              enum: [Casual, Tournament, Mingle]
+            mingleConfiguration:
+              oneOf:
+                - {$ref: '#/components/schemas/MingleConfiguration'}
+                - {type: 'null'}
+            revision:
+              type: integer
+              description: Completed session revision for event.encounters.
+            pairs:
+              type: array
+              maxItems: 1000
+              items: {$ref: '#/components/schemas/EncounterPair'}
+            total: {type: integer, minimum: 0}
+            offset: {type: integer, minimum: 0}
+            nextOffset: {type: [integer, 'null']}
             change:
               type: object
               description: Present for a participant join or membership-state change.
@@ -370,6 +457,14 @@ components:
         sourceLink:
           type: string
           format: uri
+          description: External organizer event-page link, using the same contract as assets.
+        mode:
+          type: string
+          enum: [Casual, Tournament, Mingle]
+          description: UI names are Standard, Tournament and Speed meeting; wire values remain unchanged.
+          default: Casual
+        mingleConfiguration:
+          $ref: '#/components/schemas/MingleConfiguration'
         topics:
           type: array
           items:
@@ -399,3 +494,72 @@ components:
           enum: [created, existing, rejected]
         error:
           type: [string, 'null']
+
+    MingleConfiguration:
+      type: object
+      required: [groupSize, plannedRounds, roundDurationMinutes, breakDurationMinutes, requireGenderBalance]
+      properties:
+        groupSize: {type: integer, minimum: 2, maximum: 20}
+        plannedRounds: {type: integer, minimum: 1, maximum: 100}
+        roundDurationMinutes: {type: integer, minimum: 1, maximum: 240}
+        breakDurationMinutes: {type: integer, minimum: 0, maximum: 60}
+        requireGenderBalance: {type: boolean}
+    EventResponse:
+      type: object
+      properties:
+        id: {type: [string, 'null'], description: Caller-owned event ID when linked}
+        externalId: {type: string, description: MyScoutee event ID}
+        title: {type: [string, 'null']}
+        status: {type: [string, 'null']}
+        sourceLink: {type: [string, 'null'], description: External organizer event-page URL}
+        mode: {type: string, enum: [Casual, Tournament, Mingle]}
+        mingleConfiguration:
+          oneOf:
+            - {$ref: '#/components/schemas/MingleConfiguration'}
+            - {type: 'null'}
+    EncounterParticipant:
+      type: object
+      properties:
+        id: {type: [string, 'null'], description: Partner participant ID when linked}
+        externalId: {type: string, description: Opaque organizer-scoped participant identifier}
+    EncounterPair:
+      type: object
+      properties:
+        first: {$ref: '#/components/schemas/EncounterParticipant'}
+        second: {$ref: '#/components/schemas/EncounterParticipant'}
+    EncountersResponse:
+      type: object
+      properties:
+        id: {type: [string, 'null']}
+        externalId: {type: string}
+        revision: {type: integer}
+        pairs:
+          type: array
+          items: {$ref: '#/components/schemas/EncounterPair'}
+        total: {type: integer}
+        nextOffset: {type: [integer, 'null']}
+    ParticipantInviteRequest:
+      type: object
+      required: [participantIds]
+      properties:
+        participantIds:
+          type: array
+          minItems: 1
+          maxItems: 1000
+          uniqueItems: true
+          items: {type: string, minLength: 1, maxLength: 200}
+          description: Caller-owned participant IDs, trimmed and unique within the batch.
+    ParticipantInvite:
+      type: object
+      required: [id, inviteUrl, claimed]
+      properties:
+        id: {type: string, description: Caller-owned participant ID}
+        inviteUrl: {type: string, format: uri, description: Private bearer link for this participant}
+        claimed: {type: boolean}
+    ParticipantInvitesResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/ParticipantInvite'}

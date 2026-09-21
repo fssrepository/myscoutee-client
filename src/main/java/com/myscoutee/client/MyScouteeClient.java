@@ -104,7 +104,31 @@ public final class MyScouteeClient {
         return postMultipart("/events", request, images, JsonNode.class);
     }
 
+    public ParticipantInvitesResponse inviteParticipants(String eventExternalId, List<String> participantIds) {
+        requireBatch(participantIds);
+        return post(eventPath(eventExternalId) + "/invites", Map.of("participantIds", participantIds), ParticipantInvitesResponse.class);
+    }
+
+    public EventResponse event(String externalId) {
+        return request(eventPath(externalId), null, "GET", EventResponse.class);
+    }
+
+    public EncountersResponse encounters(String externalId, int offset, int limit) {
+        if (offset < 0 || limit < 1 || limit > MAX_BATCH_SIZE) throw new IllegalArgumentException("Invalid encounters page.");
+        return request(eventPath(externalId) + "/encounters?offset=" + offset + "&limit=" + limit,
+                null, "GET", EncountersResponse.class);
+    }
+
+    private String eventPath(String externalId) {
+        if (externalId == null || externalId.isBlank()) throw new IllegalArgumentException("externalId is required");
+        return "/events/" + java.net.URLEncoder.encode(externalId.trim(), StandardCharsets.UTF_8);
+    }
+
     private <T> T post(String path, Object body, Class<T> responseType) {
+        return request(path, body, "POST", responseType);
+    }
+
+    private <T> T request(String path, Object body, String method, Class<T> responseType) {
         try {
             String requestBody = objectMapper.writeValueAsString(body);
             HttpRequest request = HttpRequest.newBuilder(resolve(path))
@@ -113,7 +137,7 @@ public final class MyScouteeClient {
                     .header(CLIENT_ID_HEADER, config.clientId().toString())
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
@@ -298,6 +322,24 @@ public final class MyScouteeClient {
             String visibility,
             String status,
             String sourceLink,
-            List<String> topics) {
+            List<String> topics,
+            String mode,
+            MingleConfiguration mingleConfiguration) {
+        public EventItem(String id, String title, String subtitle, String startAt, String endAt, String location,
+                Integer capacityMin, Integer capacityMax, String visibility, String status, String sourceLink, List<String> topics) {
+            this(id, title, subtitle, startAt, endAt, location, capacityMin, capacityMax, visibility, status,
+                    sourceLink, topics, null, null);
+        }
     }
+    public record MingleConfiguration(Integer groupSize, Integer plannedRounds, Integer roundDurationMinutes,
+            Integer breakDurationMinutes, Boolean requireGenderBalance) { }
+    public record EventResponse(String id, String externalId, String title, String status, String sourceLink,
+            String mode, MingleConfiguration mingleConfiguration) { }
+    public record EncounterParticipant(String id, String externalId) { }
+    public record EncounterPair(EncounterParticipant first, EncounterParticipant second) { }
+    public record EncountersResponse(String id, String externalId, int revision, List<EncounterPair> pairs,
+            int total, Integer nextOffset) { }
+    public record ParticipantInvite(String id, String inviteUrl, boolean claimed) { }
+    public record ParticipantInvitesResponse(List<ParticipantInvite> items) { }
+
 }

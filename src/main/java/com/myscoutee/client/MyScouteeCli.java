@@ -47,6 +47,18 @@ public final class MyScouteeCli {
             case "connect" -> printJson(client().connect());
             case "assets" -> createFile(args, true);
             case "events" -> createFile(args, false);
+            case "event" -> {
+                if (args.length != 2) throw new IllegalArgumentException("Usage: myscoutee-client event <external-id>");
+                printJson(client().event(args[1]));
+            }
+            case "encounters" -> {
+                if (args.length < 2 || args.length > 4) throw new IllegalArgumentException("Usage: myscoutee-client encounters <external-id> [offset] [limit]");
+                printJson(client().encounters(args[1], args.length > 2 ? Integer.parseInt(args[2]) : 0, args.length > 3 ? Integer.parseInt(args[3]) : 1000));
+            }
+            case "invites" -> {
+                if (args.length < 3) throw new IllegalArgumentException("Usage: myscoutee-client invites <external-id> <participant-id> ...");
+                printJson(client().inviteParticipants(args[1], java.util.Arrays.asList(args).subList(2, args.length)));
+            }
             case "watch" -> watch(args);
             case "unwatch" -> printJson(client().unwatch());
             case "show-config" -> showConfig();
@@ -102,7 +114,7 @@ public final class MyScouteeCli {
     private static void watch(String[] args) throws IOException {
         if (args.length < 2 || args.length > 3) {
             throw new IllegalArgumentException(
-                    "Usage: myscoutee-client watch <callback-url> [event.changed,asset.changed]");
+                    "Usage: myscoutee-client watch <callback-url> [event.changed,asset.changed,event.encounters]");
         }
         List<String> events = args.length == 2
                 ? List.of()
@@ -179,7 +191,10 @@ public final class MyScouteeCli {
                   connect
                   assets <request.json> [<item-id>=<image-file> ...]
                   events <request.json> [<item-id>=<image-file> ...]
-                  watch <callback-url> [event.changed,asset.changed]
+                  event <external-id>
+                  encounters <external-id> [offset] [limit]
+                  invites <external-id> <participant-id> ...
+                  watch <callback-url> [event.changed,asset.changed,event.encounters]
                   unwatch
                   show-config
                 """);

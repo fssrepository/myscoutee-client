@@ -2,7 +2,7 @@
 
 Java 17 SDK and CLI for the small MyScoutee integration API.
 
-The API is intentionally write-oriented. It accepts asset and event batches and returns the caller's `id` together with the stable MyScoutee resource ID as `externalId`. It is not a general-purpose query API.
+The API is intentionally write-oriented. It accepts asset and event batches and returns the caller's `id` together with the stable MyScoutee resource ID as `externalId`. It also exposes owner-scoped event details and completed Mingle encounters.
 
 ## Client slot and authentication
 
@@ -38,6 +38,9 @@ By default the CLI stores one token and its client UUID in `~/.myscoutee/client.
 | Connect and claim token | `POST /connect` | one client UUID per token |
 | Create assets | `POST /assets` | 1–1000 items per request |
 | Create events | `POST /events` | 1–1000 items per request |
+| Read event details (including `sourceLink`) | `GET /events/{externalId}` | managed events only |
+| Read completed encounters | `GET /events/{externalId}/encounters?offset=0&limit=1000` | up to 1000 unique pairs per page |
+| Create participant invitation links | `POST /events/{externalId}/invites` | 1–1000 distinct participant IDs |
 | Register or disable callback | `POST /watch` | one callback per claimed token/client |
 
 The watch endpoint is a callback registration, not a polling or general read
@@ -186,3 +189,70 @@ myscoutee-client assets src/test/resources/fixtures/qa-api-asset.json \
 myscoutee-client events src/test/resources/fixtures/qa-api-event.json \
   a3b891c2-1a45-4fe8-b8c2-c217c22466b4=src/test/resources/fixtures/integration-api-qa.png
 ```
+
+## Event formats and organizer links
+
+`sourceLink` is the external organizer's event-page URL, matching the asset link
+contract. It is returned in event details and `event.changed` callbacks. It is
+not a separate payment URL.
+
+Event creation accepts `mode` (`Casual`, `Tournament`, `Mingle`; omitted means
+`Casual`) and an optional `mingleConfiguration`. Configuration is valid only
+for Mingle and, when supplied, must specify `groupSize` (2–20), `plannedRounds`
+(1–100), `roundDurationMinutes` (1–240), `breakDurationMinutes` (0–60) and
+`requireGenderBalance` (boolean). Selecting Mingle does not invent a configuration.
+
+```java
+var event = client.event(createdEvent.externalId());
+var page = client.encounters(event.externalId(), 0, 1000);
+```
+
+Encounters require a completed Mingle session (otherwise HTTP 409). Each pair
+appears once across all completed rounds, using their frozen actual table
+memberships. Neither ratings nor friendship status affects the export.
+Participant `id` is the organizer's external participant ID when linked;
+`externalId` is an opaque, stable identifier scoped to that organizer. Internal
+user IDs and contact details are not exported. Continue with `nextOffset` while
+it is non-null, and keep pages from the same `revision` together.
+
+Subscribe explicitly to `event.encounters` to receive the same result through
+watch callbacks. Results are chunked into pages of up to 1000 pairs, with
+`offset`, `nextOffset`, `total` and `revision`. The existing default watch event
+list remains `event.changed` and `asset.changed`. Completion is persisted before
+outbox creation; a restart retries pending publication without replacing or
+resending an already queued delivery. Callback delivery itself retains the
+existing delivery retry behavior. Register watch before completion; historical
+sessions are queried through the encounters endpoint.
+
+
+## Participant invitation links
+
+```java
+var invitations = client.inviteParticipants(event.externalId(), List.of("guest-001", "guest-002"));
+```
+
+The body is `{"participantIds":["guest-001","guest-002"]}`. The response is
+`{"items":[{"id":"guest-001","inviteUrl":"https://example.com/game?partnerInvite=…","claimed":false},…]}`.
+IDs are trimmed, nonblank, at most 200 characters and unique within the batch.
+Retries for the same organizer, event and participant return the same link.
+Keep each URL private and deliver it only to its intended participant.
+
+Opening the URL preserves it through sign-in or registration. Claiming binds
+that external participant ID to the authenticated account and creates the
+normal pending event invitation. The participant still follows the app's
+ordinary acceptance and payment flow. A claimed link cannot be transferred to
+another account; an organizer's participant ID cannot identify two accounts.
+Encounter exports use this ID after a successful claim. Participants who joined
+without a partner link have `id: null` and an opaque organizer-scoped `externalId`.
+
+```sh
+myscoutee-client event <myscoutee-event-id>
+myscoutee-client invites <myscoutee-event-id> guest-001 guest-002
+myscoutee-client encounters <myscoutee-event-id> 0 1000
+myscoutee-client watch https://integration.example.test/hooks/myscoutee event.changed,event.encounters
+```
+
+The app calls this format **Speed meeting** (**Villámtalálkozók** in Hungarian).
+Its API enum remains `Mingle`, and its configuration field remains `mingleConfiguration`.
+These additions are documented from the current source tree; they do not imply
+that an earlier published client binary already contains the new commands.

@@ -82,8 +82,9 @@ paths:
       description: >-
         Repeating the same organizer/group/participant ID returns the same link.
         Opening the link requires application sign-in or registration. Claiming
-        binds the participant ID to that account and creates an ordinary pending
-        group invitation; it does not accept membership or create a workspace profile.
+        binds the participant ID to that account, accepts group membership through
+        the normal invitation flow and creates its workspace profile. The application
+        selects that group as the active workspace after sign-in or registration.
       operationId: inviteGroupParticipants
       parameters:
         - name: groupId

@@ -264,5 +264,6 @@ Use `client.inviteGroupParticipants(groupId, participantIds)` or
 `myscoutee-client group-invites <group-id> guest-001 guest-002` for an existing
 group administered by the token owner. Participant IDs are external identifiers,
 not account IDs. Repeating a group/participant pair returns its existing claim link.
-Claiming after sign-in creates a pending invitation. Membership approval creates
-the group profile; a claim never grants workspace access by itself.
+Links use the same sign-in and registration flow as event invitations. Claiming
+a group link accepts membership through the normal invitation flow and creates
+the group profile. The app then selects that group as the active workspace.

@@ -104,6 +104,29 @@ class MyScouteeClientTest {
         assertEquals("partner-42", client.inviteParticipants("event", List.of("partner-42")).items().get(0).id());
     }
 
+
+    @Test
+    void groupInvitationsUseGroupPathAndPreserveParticipantIds() throws IOException {
+        AtomicReference<JsonNode> submitted = new AtomicReference<>();
+        AtomicReference<String> method = new AtomicReference<>();
+        server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        server.createContext("/api/integrations/v1/groups/team/with space/invites", exchange -> {
+            method.set(exchange.getRequestMethod());
+            submitted.set(new ObjectMapper().readTree(exchange.getRequestBody()));
+            byte[] response = "{\"items\":[{\"id\":\"guest-1\",\"inviteUrl\":\"https://example.test/game?partnerInvite=opaque\",\"claimed\":false}]}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            exchange.getResponseBody().write(response);
+            exchange.close();
+        });
+        server.start();
+        var client = new MyScouteeClient(new MyScouteeClientConfig(URI.create("http://localhost:" + server.getAddress().getPort() + "/api/integrations/v1"), "msc_test", UUID.randomUUID()));
+        assertEquals("guest-1", client.inviteGroupParticipants("team/with space", List.of("guest-1")).items().get(0).id());
+        assertEquals("POST", method.get());
+        assertEquals("guest-1", submitted.get().path("participantIds").get(0).asText());
+        assertThrows(IllegalArgumentException.class, () -> client.inviteGroupParticipants("", List.of("guest-1")));
+        assertThrows(IllegalArgumentException.class, () -> client.inviteGroupParticipants("team", List.of()));
+    }
+
     @Test
     void missingTokenIsRejectedBeforeARequestCanBeSent() {
         IllegalArgumentException exception = assertThrows(

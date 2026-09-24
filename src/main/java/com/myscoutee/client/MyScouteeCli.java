@@ -55,6 +55,10 @@ public final class MyScouteeCli {
                 if (args.length < 2 || args.length > 4) throw new IllegalArgumentException("Usage: myscoutee-client encounters <external-id> [offset] [limit]");
                 printJson(client().encounters(args[1], args.length > 2 ? Integer.parseInt(args[2]) : 0, args.length > 3 ? Integer.parseInt(args[3]) : 1000));
             }
+            case "group-invites" -> {
+                if (args.length < 3) throw new IllegalArgumentException("Usage: myscoutee-client group-invites <group-id> <participant-id> ...");
+                printJson(client().inviteGroupParticipants(args[1], java.util.Arrays.asList(args).subList(2, args.length)));
+            }
             case "invites" -> {
                 if (args.length < 3) throw new IllegalArgumentException("Usage: myscoutee-client invites <external-id> <participant-id> ...");
                 printJson(client().inviteParticipants(args[1], java.util.Arrays.asList(args).subList(2, args.length)));
@@ -194,6 +198,7 @@ public final class MyScouteeCli {
                   event <external-id>
                   encounters <external-id> [offset] [limit]
                   invites <external-id> <participant-id> ...
+                  group-invites <group-id> <participant-id> ...
                   watch <callback-url> [event.changed,asset.changed,event.encounters]
                   unwatch
                   show-config

@@ -109,6 +109,15 @@ public final class MyScouteeClient {
         return post(eventPath(eventExternalId) + "/invites", Map.of("participantIds", participantIds), ParticipantInvitesResponse.class);
     }
 
+    /** Creates claimable links for a group administered by the token owner. */
+    public ParticipantInvitesResponse inviteGroupParticipants(String groupId, List<String> participantIds) {
+        requireBatch(participantIds);
+        if (groupId == null || groupId.isBlank()) throw new IllegalArgumentException("groupId is required");
+        return post("/groups/" + java.net.URLEncoder.encode(groupId.trim(), StandardCharsets.UTF_8).replace("+", "%20") + "/invites",
+                Map.of("participantIds", participantIds), ParticipantInvitesResponse.class);
+    }
+
+
     public EventResponse event(String externalId) {
         return request(eventPath(externalId), null, "GET", EventResponse.class);
     }

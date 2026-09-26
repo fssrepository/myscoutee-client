@@ -40,6 +40,7 @@ By default the CLI stores one token and its client UUID in `~/.myscoutee/client.
 | Create events | `POST /events` | 1–1000 items per request |
 | Read event details (including `sourceLink`) | `GET /events/{externalId}` | managed events only |
 | Read completed encounters | `GET /events/{externalId}/encounters?offset=0&limit=1000` | up to 1000 unique pairs per page |
+| Create group invitation links | `POST /groups/{groupId}/invites` | 1–1000 distinct participant IDs |
 | Create participant invitation links | `POST /events/{externalId}/invites` | 1–1000 distinct participant IDs |
 | Register or disable callback | `POST /watch` | one callback per claimed token/client |
 
@@ -256,3 +257,13 @@ The app calls this format **Speed meeting** (**Villámtalálkozók** in Hungaria
 Its API enum remains `Mingle`, and its configuration field remains `mingleConfiguration`.
 These additions are documented from the current source tree; they do not imply
 that an earlier published client binary already contains the new commands.
+
+### Group invitations
+
+Use `client.inviteGroupParticipants(groupId, participantIds)` or
+`myscoutee-client group-invites <group-id> guest-001 guest-002` for an existing
+group administered by the token owner. Participant IDs are external identifiers,
+not account IDs. Repeating a group/participant pair returns its existing claim link.
+Links use the same sign-in and registration flow as event invitations. Claiming
+a group link accepts membership through the normal invitation flow and creates
+the group profile. The app then selects that group as the active workspace.

@@ -41,7 +41,11 @@ class MyScouteeClientTest {
         server.createContext("/api/integrations/v1/connect", exchange -> {
             authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
             clientIdHeader.set(exchange.getRequestHeaders().getFirst(MyScouteeClient.CLIENT_ID_HEADER));
-            byte[] response = "{\"connected\":true,\"maxBatchSize\":1000}"
+            byte[] response = """
+                    {"connected":true,"maxBatchSize":1000,"profileId":"profile-1",
+                    "profileName":"Owner","groupId":"group-1","groupName":"Team",
+                    "operations":["createEvents"],"inviteGroups":[{"id":"group-1","name":"Team"}]}
+                    """
                     .getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, response.length);
@@ -59,6 +63,10 @@ class MyScouteeClientTest {
 
         assertEquals(true, response.connected());
         assertEquals(1000, response.maxBatchSize());
+        assertEquals("profile-1", response.profileId());
+        assertEquals("group-1", response.groupId());
+        assertEquals(List.of("createEvents"), response.operations());
+        assertEquals("group-1", response.inviteGroups().get(0).id());
         assertEquals("Bearer msc_secret", authorization.get());
         assertEquals(clientId.toString(), clientIdHeader.get());
     }
@@ -102,6 +110,29 @@ class MyScouteeClientTest {
         assertEquals("https://organizer.test/event", client.event("event").sourceLink());
         assertEquals(7, client.encounters("event", 0, 1000).revision());
         assertEquals("partner-42", client.inviteParticipants("event", List.of("partner-42")).items().get(0).id());
+    }
+
+
+    @Test
+    void groupInvitationsUseGroupPathAndPreserveParticipantIds() throws IOException {
+        AtomicReference<JsonNode> submitted = new AtomicReference<>();
+        AtomicReference<String> method = new AtomicReference<>();
+        server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        server.createContext("/api/integrations/v1/groups/team/with space/invites", exchange -> {
+            method.set(exchange.getRequestMethod());
+            submitted.set(new ObjectMapper().readTree(exchange.getRequestBody()));
+            byte[] response = "{\"items\":[{\"id\":\"guest-1\",\"inviteUrl\":\"https://example.test/game?partnerInvite=opaque\",\"claimed\":false}]}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            exchange.getResponseBody().write(response);
+            exchange.close();
+        });
+        server.start();
+        var client = new MyScouteeClient(new MyScouteeClientConfig(URI.create("http://localhost:" + server.getAddress().getPort() + "/api/integrations/v1"), "msc_test", UUID.randomUUID()));
+        assertEquals("guest-1", client.inviteGroupParticipants("team/with space", List.of("guest-1")).items().get(0).id());
+        assertEquals("POST", method.get());
+        assertEquals("guest-1", submitted.get().path("participantIds").get(0).asText());
+        assertThrows(IllegalArgumentException.class, () -> client.inviteGroupParticipants("", List.of("guest-1")));
+        assertThrows(IllegalArgumentException.class, () -> client.inviteGroupParticipants("team", List.of()));
     }
 
     @Test

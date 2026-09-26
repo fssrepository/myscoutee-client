@@ -2,7 +2,13 @@ openapi: 3.1.0
 info:
   title: MyScoutee Integration API
   version: 1.0.1
-  description: Batch write, owner-scoped event read and callback API for external asset and event systems.
+  description: >-
+    Batch write, owner-scoped event read and callback API for external asset and event systems.
+    Keys belong to the profile that issued them. Event operations use that profile's
+    group (or the base profile), independently of the account's interactive group
+    selection. Group-profile keys require continued accepted group membership.
+    Asset creation requires a base-profile key; group-profile keys cannot create assets.
+    No group header or group parameter is needed.
 servers:
   - url: https://example.com/api/integrations/v1
 security:
@@ -148,6 +154,7 @@ paths:
     post:
       summary: Create up to 1000 assets
       description: >-
+        Requires a key issued by the base profile. Assets belong to that base profile.
         Each caller id is idempotent. A repeated id returns the already allocated
         MyScoutee externalId. An optional image can be sent as multipart bytes;
         MyScoutee never downloads an image URL.
@@ -195,6 +202,8 @@ paths:
           description: Invalid batch
         '401':
           description: Authentication or client claim failed
+        '403':
+          description: Asset creation requires a base-profile integration key
   /events:
     post:
       summary: Create up to 1000 events

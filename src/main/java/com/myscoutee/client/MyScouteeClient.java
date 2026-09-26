@@ -286,8 +286,15 @@ public final class MyScouteeClient {
         });
     }
 
-    public record ConnectResponse(boolean connected, int maxBatchSize) {
+    public record ConnectResponse(boolean connected, int maxBatchSize, String profileId,
+            String profileName, String groupId, String groupName, List<String> operations,
+            List<IntegrationGroupScope> inviteGroups) {
+        public ConnectResponse(boolean connected, int maxBatchSize) {
+            this(connected, maxBatchSize, null, null, null, null, List.of(), List.of());
+        }
     }
+
+    public record IntegrationGroupScope(String id, String name) { }
 
     public record WatchRequest(String callbackUrl, List<String> events, boolean enabled) {
     }

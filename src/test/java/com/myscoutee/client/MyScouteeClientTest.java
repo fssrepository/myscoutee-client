@@ -41,7 +41,11 @@ class MyScouteeClientTest {
         server.createContext("/api/integrations/v1/connect", exchange -> {
             authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
             clientIdHeader.set(exchange.getRequestHeaders().getFirst(MyScouteeClient.CLIENT_ID_HEADER));
-            byte[] response = "{\"connected\":true,\"maxBatchSize\":1000}"
+            byte[] response = """
+                    {"connected":true,"maxBatchSize":1000,"profileId":"profile-1",
+                    "profileName":"Owner","groupId":"group-1","groupName":"Team",
+                    "operations":["createEvents"],"inviteGroups":[{"id":"group-1","name":"Team"}]}
+                    """
                     .getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, response.length);
@@ -59,6 +63,10 @@ class MyScouteeClientTest {
 
         assertEquals(true, response.connected());
         assertEquals(1000, response.maxBatchSize());
+        assertEquals("profile-1", response.profileId());
+        assertEquals("group-1", response.groupId());
+        assertEquals(List.of("createEvents"), response.operations());
+        assertEquals("group-1", response.inviteGroups().get(0).id());
         assertEquals("Bearer msc_secret", authorization.get());
         assertEquals(clientId.toString(), clientIdHeader.get());
     }

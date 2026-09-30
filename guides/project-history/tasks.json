@@ -1,0 +1,58 @@
+[
+  {
+    "task_id": "MSC-90",
+    "title": "Add elastic integration webhooks and package v1.0.1 configuration",
+    "workstream": "Product",
+    "started": "2026-09-19",
+    "finished": "2026-09-20",
+    "tokens_million": 3.84,
+    "api_equivalent_usd_estimate": 2.83,
+    "active_hours": 0.1,
+    "allocated_hours": 0.02,
+    "models": "gpt-5.6-sol",
+    "reasoning": "xhigh",
+    "evidence": "Estimated task allocation of measured daily account totals"
+  },
+  {
+    "task_id": "MSC-92",
+    "title": "Introduce Mingle event runtime and encounter integration",
+    "workstream": "Product",
+    "started": "2026-09-21",
+    "finished": "2026-09-24",
+    "tokens_million": 445.64,
+    "api_equivalent_usd_estimate": 385.03,
+    "active_hours": 10.7,
+    "allocated_hours": 10.62,
+    "models": "gpt-5.6-sol; gpt-6-astra",
+    "reasoning": "xhigh; high",
+    "evidence": "Estimated task allocation of measured daily account totals"
+  },
+  {
+    "task_id": "MSC-98",
+    "title": "Introduce community groups and scoped integration APIs",
+    "workstream": "Product",
+    "started": "2026-09-24",
+    "finished": "2026-09-26",
+    "tokens_million": 73.67,
+    "api_equivalent_usd_estimate": 108.82,
+    "active_hours": 3.7,
+    "allocated_hours": 3.72,
+    "models": "gpt-6-astra",
+    "reasoning": "xhigh; high",
+    "evidence": "Estimated task allocation of measured daily account totals"
+  },
+  {
+    "task_id": "MSC-110",
+    "title": "Reconstruct the Project and preserve restorable Git records",
+    "workstream": "Project administration (AI-assisted)",
+    "started": "2026-09-30",
+    "finished": "2026-10-01",
+    "tokens_million": 12.0,
+    "api_equivalent_usd_estimate": 18.47,
+    "active_hours": 0.749,
+    "allocated_hours": 0.75,
+    "models": "gpt-6-astra",
+    "reasoning": "high",
+    "evidence": "Measured maintenance-session tokens; estimated allocation by backup snapshot ownership (9:2:2:2 across four Projects)"
+  }
+]

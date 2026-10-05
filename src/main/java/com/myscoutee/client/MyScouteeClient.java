@@ -86,6 +86,17 @@ public final class MyScouteeClient {
         return postMultipart("/events", new BatchRequest<>(items), images, BatchResponse.class);
     }
 
+    public BatchResponse createCampaigns(List<CampaignItem> items) {
+        requireBatch(items);
+        return post("/campaigns", new BatchRequest<>(items), BatchResponse.class);
+    }
+
+    public BatchResponse createCampaigns(List<CampaignItem> items, Map<String, Path> images) {
+        requireBatch(items);
+        requireImages(items.stream().map(CampaignItem::id).collect(java.util.stream.Collectors.toSet()), images);
+        return postMultipart("/campaigns", new BatchRequest<>(items), images, BatchResponse.class);
+    }
+
     public JsonNode createAssets(JsonNode request) {
         return post("/assets", request, JsonNode.class);
     }
@@ -102,6 +113,15 @@ public final class MyScouteeClient {
     public JsonNode createEvents(JsonNode request, Map<String, Path> images) {
         requireJsonBatchAndImages(request, images);
         return postMultipart("/events", request, images, JsonNode.class);
+    }
+
+    public JsonNode createCampaigns(JsonNode request) {
+        return post("/campaigns", request, JsonNode.class);
+    }
+
+    public JsonNode createCampaigns(JsonNode request, Map<String, Path> images) {
+        requireJsonBatchAndImages(request, images);
+        return postMultipart("/campaigns", request, images, JsonNode.class);
     }
 
     public ParticipantInvitesResponse inviteParticipants(String eventExternalId, List<String> participantIds) {
@@ -325,6 +345,9 @@ public final class MyScouteeClient {
             List<String> routes,
             String visibility) {
     }
+
+    public record CampaignItem(String id, String title, String description, String kind, String category,
+            Integer capacity, List<String> languages, Double maxDistanceKm) { }
 
     public record EventItem(
             String id,

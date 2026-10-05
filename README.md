@@ -267,3 +267,21 @@ not account IDs. Repeating a group/participant pair returns its existing claim l
 Links use the same sign-in and registration flow as event invitations. Claiming
 a group link accepts membership through the normal invitation flow and creates
 the group profile. The app then selects that group as the active workspace.
+
+## Work campaign creation
+
+Use a Work profile's existing integration key. `connect` advertises `createCampaigns`
+only for an eligible Work connection. `POST /integrations/v1/campaigns` creates
+campaign drafts in that profile's workspace; review and publish them in MyScoutee.
+Creation uses the same UUID mapping, batch response and optional multipart image
+upload as events. Repeating an item UUID returns its existing mapping.
+
+```sh
+myscoutee-client campaigns campaign.json
+```
+
+```json
+{"items":[{"id":"b8186d5d-e222-4e22-9b84-486918a35b11","title":"Build a team","description":"Find collaborators for a product idea","kind":"business","category":"technology","capacity":6,"languages":["en"],"maxDistanceKm":50}]}
+```
+
+Campaign listing and external publishing are not part of this contract.

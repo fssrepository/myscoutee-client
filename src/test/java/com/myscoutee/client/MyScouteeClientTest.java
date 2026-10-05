@@ -34,6 +34,32 @@ class MyScouteeClientTest {
     }
 
     @Test
+    void campaignCreationUsesWorkConnectionAndPreservesCampaignFields() throws IOException {
+        AtomicReference<JsonNode> submitted = new AtomicReference<>();
+        var json = new ObjectMapper();
+        server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        server.createContext("/api/integrations/v1/campaigns", exchange -> {
+            assertEquals("POST", exchange.getRequestMethod());
+            assertEquals("Bearer work-key", exchange.getRequestHeaders().getFirst("Authorization"));
+            submitted.set(json.readTree(exchange.getRequestBody()));
+            byte[] body = "{\"items\":[]}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+        server.start();
+        var client = new MyScouteeClient(new MyScouteeClientConfig(URI.create("http://localhost:" + server.getAddress().getPort() + "/api/integrations/v1"), "work-key", UUID.randomUUID()));
+        String id = UUID.randomUUID().toString();
+        client.createCampaigns(List.of(new MyScouteeClient.CampaignItem(id, "Build a team", "Find collaborators", "business", "technology", 6, List.of("en"), 50d)));
+        var item = submitted.get().path("items").get(0);
+        assertEquals(id, item.path("id").asText());
+        assertEquals("business", item.path("kind").asText());
+        assertEquals(6, item.path("capacity").asInt());
+        assertEquals(50d, item.path("maxDistanceKm").asDouble());
+        assertTrue(!item.has("ownerUserId") && !item.has("groupId"));
+    }
+
+    @Test
     void connectSendsBearerTokenAndStableClientId() throws IOException {
         AtomicReference<String> authorization = new AtomicReference<>();
         AtomicReference<String> clientIdHeader = new AtomicReference<>();

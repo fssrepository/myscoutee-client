@@ -45,8 +45,7 @@ public final class MyScouteeCli {
         switch (args[0]) {
             case "configure" -> configure(args);
             case "connect" -> printJson(client().connect());
-            case "assets" -> createFile(args, true);
-            case "events" -> createFile(args, false);
+            case "assets", "events", "campaigns" -> createFile(args);
             case "event" -> {
                 if (args.length != 2) throw new IllegalArgumentException("Usage: myscoutee-client event <external-id>");
                 printJson(client().event(args[1]));
@@ -90,10 +89,10 @@ public final class MyScouteeCli {
         printJson(response);
     }
 
-    private static void createFile(String[] args, boolean assets) throws IOException {
+    private static void createFile(String[] args) throws IOException {
         if (args.length < 2) {
             throw new IllegalArgumentException(
-                    "Usage: myscoutee-client " + (assets ? "assets" : "events")
+                    "Usage: myscoutee-client " + args[0]
                             + " <request.json> [<item-id>=<image-file> ...]");
         }
         JsonNode request = JSON.readTree(Files.readString(Path.of(args[1])));
@@ -109,9 +108,11 @@ public final class MyScouteeCli {
             }
         }
         MyScouteeClient api = client();
-        JsonNode response = assets
-                ? api.createAssets(request, images)
-                : api.createEvents(request, images);
+        JsonNode response = switch (args[0]) {
+            case "assets" -> api.createAssets(request, images);
+            case "campaigns" -> api.createCampaigns(request, images);
+            default -> api.createEvents(request, images);
+        };
         printJson(response);
     }
 
@@ -195,6 +196,7 @@ public final class MyScouteeCli {
                   connect
                   assets <request.json> [<item-id>=<image-file> ...]
                   events <request.json> [<item-id>=<image-file> ...]
+                  campaigns <request.json> [<item-id>=<image-file> ...]
                   event <external-id>
                   encounters <external-id> [offset] [limit]
                   invites <external-id> <participant-id> ...

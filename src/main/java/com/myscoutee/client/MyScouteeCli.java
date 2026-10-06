@@ -44,6 +44,8 @@ public final class MyScouteeCli {
         }
         switch (args[0]) {
             case "configure" -> configure(args);
+            case "query" -> query(args);
+            case "command" -> command(args);
             case "connect" -> printJson(client().connect());
             case "assets", "events", "campaigns" -> createFile(args);
             case "event" -> {
@@ -67,6 +69,55 @@ public final class MyScouteeCli {
             case "show-config" -> showConfig();
             default -> throw new IllegalArgumentException("Unknown command: " + args[0]);
         }
+    }
+
+    private static void query(String[] args) throws IOException {
+        if (args.length < 2 || args.length > 3) throw new IllegalArgumentException("Usage: myscoutee-client query <operation> [parameters.json]");
+        JsonNode p = args.length == 3 ? JSON.readTree(Files.readString(Path.of(args[2]))) : JSON.createObjectNode();
+        if (p == null || !p.isObject()) throw new IllegalArgumentException("Parameters must be a JSON object");
+        var api = client();
+        printJson(switch (args[1]) {
+            case "listEvents" -> api.listEvents(p.path("bucket").asText("events"), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "eventDetails" -> api.eventDetails(p.path("id").asText(null));
+            case "listGroups" -> api.listGroups(p.path("bucket").asText("explore"), p.path("category").asText(null), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "groupDetails" -> api.groupDetails(p.path("id").asText(null));
+            case "listChats" -> api.listChats(p.path("context").asText(null), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "chatDetails" -> api.chatDetails(p.path("id").asText(null));
+            case "chatMessages" -> api.chatMessages(p.path("id").asText(null), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "listNotifications" -> api.listNotifications(p.path("bucket").asText(null), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "listRatings" -> api.listRatings(p.path("mode").asText("single"), p.path("direction").asText("given"), p.path("campaignId").asText(null), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "listAssets" -> api.listAssets(p.path("type").asText("Transport"), p.path("category").asText(null), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "assetDetails" -> api.assetDetails(p.path("id").asText(null));
+            case "listCampaigns" -> api.listCampaigns(p.path("scope").asText("own"), p.path("status").asText("published"), p.path("kind").asText(null), p.path("category").asText(null), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "campaignDetails" -> api.campaignDetails(p.path("id").asText(null));
+            case "campaignHistory" -> api.campaignHistory(p.path("id").asText(null), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "listServices" -> api.listServices(p.path("scope").asText("own"), p.path("status").asText("published"), p.path("category").asText(null), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "serviceDetails" -> api.serviceDetails(p.path("id").asText(null));
+            case "listCases" -> api.listCases(p.path("status").asText("active"), p.path("caseType").asText(null), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "caseDetails" -> api.caseDetails(p.path("id").asText(null));
+            case "listAnnouncements" -> api.listAnnouncements(p.path("communityId").asText(null), p.path("status").asText("published"), p.hasNonNull("voting") ? p.get("voting").asBoolean() : null, p.path("limit").asInt(20), p.path("cursor").asText(null));
+            case "announcementDetails" -> api.announcementDetails(p.path("id").asText(null));
+            case "listScheduledTasks" -> api.listScheduledTasks(p.path("status").asText("active"), p.path("limit").asInt(20), p.path("cursor").asText(null));
+            default -> throw new IllegalArgumentException("Unknown read operation: " + args[1]);
+        });
+    }
+    private static void command(String[] args) throws IOException {
+        if (args.length < 3 || args.length > 4) throw new IllegalArgumentException("Usage: myscoutee-client command <operation> <request.json> [resource-id]");
+        JsonNode body = JSON.readTree(Files.readString(Path.of(args[2])));
+        String id = args.length == 4 ? args[3] : null;
+        var api = client();
+        printJson(switch (args[1]) {
+            case "updateCampaign" -> api.updateCampaign(id, body);
+            case "campaignAction" -> api.campaignAction(id, body);
+            case "saveCase" -> api.saveCase(body);
+            case "caseAction" -> api.caseAction(id, body);
+            case "saveAnnouncement" -> api.saveAnnouncement(body);
+            case "announcementAction" -> api.announcementAction(id, body);
+            case "saveScheduledTask" -> api.saveScheduledTask(body);
+            case "scheduledTaskAction" -> api.scheduledTaskAction(id, body);
+            case "serviceAction" -> api.serviceAction(id, body);
+            default -> throw new IllegalArgumentException("Unknown write operation: " + args[1]);
+        });
     }
 
     private static void configure(String[] args) throws IOException {

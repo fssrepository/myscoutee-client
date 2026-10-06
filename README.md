@@ -1,8 +1,8 @@
 # MyScoutee Java client
 
-Java 17 SDK and CLI for the small MyScoutee integration API.
+Java 17 SDK and CLI for the profile-bound MyScoutee integration API (1.5.0).
 
-The API is intentionally write-oriented. It accepts asset and event batches and returns the caller's `id` together with the stable MyScoutee resource ID as `externalId`. It also exposes owner-scoped event details and completed Mingle encounters.
+The default Write pack retains asset/event/campaign creation, invitation links and managed-event reads. Write includes supported organizing commands through existing domain services; Full adds permitted application queries. Batch results retain the caller's `id` and the stable MyScoutee `externalId`.
 
 ## Client slot and authentication
 
@@ -11,6 +11,44 @@ Each MyScoutee user can create up to three active tokens. One token represents o
 The CLI creates a persistent UUID on first configuration and sends it as `X-MyScoutee-Client-Id`. The first successful connection atomically claims the token. A different client UUID cannot use that token afterward. Revoking the token from the MyScoutee profile blocks it immediately.
 
 The complete token is shown only once in MyScoutee. Treat the CLI configuration file as a secret.
+
+## Access packs and operations (MSC-116)
+
+Set Blocked / Write / Full in the application's API settings. Each API client is
+independent; MCP clients are capped by the main MCP level. The combined parent
+settings save persists all staged choices at once. `connect` returns the effective
+`accessMode` and available `operations`; do not infer access from this documentation.
+Downgrades apply to subsequent requests, including an already connected client.
+
+Full reads cover visible events, groups, chats/messages, notifications and ratings;
+base-profile assets; Work campaigns/history; Community services, cases,
+announcements and scheduled tasks. Page size is bounded, and `nextCursor` is opaque.
+`eventDetails(id)` uses the internal app ID; existing `event(externalId)` retains
+its original managed-event contract. Read results use existing domain DTOs.
+
+Write organizing commands are `updateCampaign`, `campaignAction`, `saveCase`,
+`caseAction`, `saveAnnouncement`, `announcementAction`, `saveScheduledTask`,
+`scheduledTaskAction` and `serviceAction`. Use the user's supplied current version or a prior receipt; read details only
+when Full permits that query. Normal membership, ownership and lifecycle checks apply. No caller-selected actor.
+
+Decisions requiring the person's own viewing/judgment stay in the application:
+ratings, interest, feedback, ballots, personal participation responses,
+recommendations, taking ownership, offers and offer decisions. This interface has
+no extra approval workflow. The existing app functions remain unchanged.
+
+The CLI exposes only named operations from this contract:
+
+```bash
+myscoutee-client query listEvents
+myscoutee-client query listCampaigns parameters.json
+myscoutee-client command updateCampaign campaign-update.json campaign-id
+```
+
+Query parameters are an optional JSON object. Commands use their documented JSON
+request and, for resource operations, a separate resource ID. JSON schemas and
+new writes return only ID, status and version. Broad details require Full. The
+per-domain command allowlists are in [openapi.yaml](openapi.yaml). The Java SDK has
+one method per operation; Full response payloads are returned as `JsonNode`.
 
 ## Build
 

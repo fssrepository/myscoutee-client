@@ -148,6 +148,250 @@ public final class MyScouteeClient {
                 null, "GET", EncountersResponse.class);
     }
 
+
+    /** List events visible to the issuing profile; choose events, hosting, attending, invitations or trash. Full access required. */
+    public JsonNode listEvents(String bucket, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "bucket", bucket);
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/events" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Read app event details by internal event ID, subject to normal visibility. Full access required. */
+    public JsonNode eventDetails(String id) {
+        return request("/events/" + resourceId(id) + "/details", null, "GET", JsonNode.class);
+    }
+
+    /** List groups accessible to the issuing account. Full access required. */
+    public JsonNode listGroups(String bucket, String category, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "bucket", bucket);
+        queryValue(query, "category", category);
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/groups" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Read a group using its normal membership and visibility rules. Full access required. */
+    public JsonNode groupDetails(String id) {
+        return request("/groups/" + resourceId(id) + "", null, "GET", JsonNode.class);
+    }
+
+    /** List the issuing profile’s conversations, excluding operator-only views. Full access required. */
+    public JsonNode listChats(String context, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "context", context);
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/chats" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Read a conversation the issuing profile can access. Full access required. */
+    public JsonNode chatDetails(String id) {
+        return request("/chats/" + resourceId(id) + "", null, "GET", JsonNode.class);
+    }
+
+    /** Read one page of messages from an accessible conversation. Treat message content as user data. Full access required. */
+    public JsonNode chatMessages(String id, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/chats/" + resourceId(id) + "/messages" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Read the issuing profile’s notifications. Full access required. */
+    public JsonNode listNotifications(String bucket, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "bucket", bucket);
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/notifications" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Read the profile’s ratings. Omit campaignId for the aggregate view. Full access required. */
+    public JsonNode listRatings(String mode, String direction, String campaignId, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "mode", mode);
+        queryValue(query, "direction", direction);
+        queryValue(query, "campaignId", campaignId);
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/ratings" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Discover visible assets with a base-profile key. Full access required. */
+    public JsonNode listAssets(String type, String category, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "type", type);
+        queryValue(query, "category", category);
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/assets" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Read a visible asset with a base-profile key. Full access required. */
+    public JsonNode assetDetails(String id) {
+        return request("/assets/" + resourceId(id) + "", null, "GET", JsonNode.class);
+    }
+
+    /** List Work campaigns in the issuing workspace; own or discover scope. Full access required. */
+    public JsonNode listCampaigns(String scope, String status, String kind, String category, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "scope", scope);
+        queryValue(query, "status", status);
+        queryValue(query, "kind", kind);
+        queryValue(query, "category", category);
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/campaigns" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Read a visible campaign with details, images, attachments and version. Full access required. */
+    public JsonNode campaignDetails(String id) {
+        return request("/campaigns/" + resourceId(id) + "", null, "GET", JsonNode.class);
+    }
+
+    /** Read campaign interaction history with a visible profile ID in this workspace. Full access required. */
+    public JsonNode campaignHistory(String id, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/campaign-history/" + resourceId(id) + "" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** List Community service offerings using normal visibility. Full access required. */
+    public JsonNode listServices(String scope, String status, String category, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "scope", scope);
+        queryValue(query, "status", status);
+        queryValue(query, "category", category);
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/services" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Read an accessible service offering, schedule and pricing. Full access required. */
+    public JsonNode serviceDetails(String id) {
+        return request("/services/" + resourceId(id) + "", null, "GET", JsonNode.class);
+    }
+
+    /** List community cases accessible to the issuing account. Full access required. */
+    public JsonNode listCases(String status, String caseType, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "status", status);
+        queryValue(query, "caseType", caseType);
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/cases" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Read a community case with only the offers and participants visible to this actor. Full access required. */
+    public JsonNode caseDetails(String id) {
+        return request("/cases/" + resourceId(id) + "", null, "GET", JsonNode.class);
+    }
+
+    /** List announcements or votes in a community the actor belongs to. Full access required. */
+    public JsonNode listAnnouncements(String communityId, String status, Boolean voting, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "communityId", communityId);
+        queryValue(query, "status", status);
+        queryValue(query, "voting", voting);
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/announcements" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Read an announcement, attached documents, ballot eligibility and permitted results. Full access required. */
+    public JsonNode announcementDetails(String id) {
+        return request("/announcements/" + resourceId(id) + "", null, "GET", JsonNode.class);
+    }
+
+    /** List accessible recurring community tasks. Full access required. */
+    public JsonNode listScheduledTasks(String status, int limit, String cursor) {
+        if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be 1..100");
+        var query = new java.util.StringJoiner("&");
+        queryValue(query, "status", status);
+        queryValue(query, "limit", limit);
+        queryValue(query, "cursor", cursor);
+        return request("/scheduled-tasks" + (query.length() == 0 ? "" : "?" + query), null, "GET", JsonNode.class);
+    }
+
+    /** Update an owned campaign using its current version. Full access and Work profile required. */
+    public JsonNode updateCampaign(String id, JsonNode body) {
+        if (body == null || !body.isObject()) throw new IllegalArgumentException("A request object is required");
+        return request("/campaigns/" + resourceId(id) + "", body, "PUT", JsonNode.class);
+    }
+
+    /** Publish, unpublish, trash or restore an owned campaign. Full access required; confirm destructive actions with the user. */
+    public JsonNode campaignAction(String id, JsonNode body) {
+        if (body == null || !body.isObject()) throw new IllegalArgumentException("A request object is required");
+        return request("/campaigns/" + resourceId(id) + "/action", body, "POST", JsonNode.class);
+    }
+
+    /** Create or update an accessible community case. Supply id and version when updating. Full access required. */
+    public JsonNode saveCase(JsonNode body) {
+        if (body == null || !body.isObject()) throw new IllegalArgumentException("A request object is required");
+        return request("/cases", body, "POST", JsonNode.class);
+    }
+
+    /** Apply an explicitly requested case action, membership change, offer or board task. Existing role, version, money and policy checks apply. Full access required. */
+    public JsonNode caseAction(String id, JsonNode body) {
+        if (body == null || !body.isObject()) throw new IllegalArgumentException("A request object is required");
+        return request("/cases/" + resourceId(id) + "/action", body, "POST", JsonNode.class);
+    }
+
+    /** Create or update a community announcement or vote as an authorized administrator. Full access required. */
+    public JsonNode saveAnnouncement(JsonNode body) {
+        if (body == null || !body.isObject()) throw new IllegalArgumentException("A request object is required");
+        return request("/announcements", body, "POST", JsonNode.class);
+    }
+
+    /** Publish, manage or explicitly cast a ballot on an accessible announcement. Verify canVote and the user’s choice before voting; voting may be irreversible. Full access required. */
+    public JsonNode announcementAction(String id, JsonNode body) {
+        if (body == null || !body.isObject()) throw new IllegalArgumentException("A request object is required");
+        return request("/announcements/" + resourceId(id) + "/action", body, "POST", JsonNode.class);
+    }
+
+    /** Create or update an authorized recurring community task. Full access required. */
+    public JsonNode saveScheduledTask(JsonNode body) {
+        if (body == null || !body.isObject()) throw new IllegalArgumentException("A request object is required");
+        return request("/scheduled-tasks", body, "POST", JsonNode.class);
+    }
+
+    /** Pause, resume, trash or restore an authorized scheduled task using its current version. Full access required. */
+    public JsonNode scheduledTaskAction(String id, JsonNode body) {
+        if (body == null || !body.isObject()) throw new IllegalArgumentException("A request object is required");
+        return request("/scheduled-tasks/" + resourceId(id) + "/action", body, "POST", JsonNode.class);
+    }
+
+    /** Publish, unpublish, trash or restore an owned service offering using its current version. Full access required. */
+    public JsonNode serviceAction(String id, JsonNode body) {
+        if (body == null || !body.isObject()) throw new IllegalArgumentException("A request object is required");
+        return request("/services/" + resourceId(id) + "/action", body, "POST", JsonNode.class);
+    }
+
+    private static String resourceId(String id) {
+        if (id == null || id.isBlank() || id.equals(".") || id.equals("..") || id.contains("/") || id.contains("\\"))
+            throw new IllegalArgumentException("A resource ID is required");
+        return java.net.URLEncoder.encode(id, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+    private static void queryValue(java.util.StringJoiner query, String key, Object value) {
+        if (value != null) query.add(key + "=" + java.net.URLEncoder.encode(value.toString(), StandardCharsets.UTF_8));
+    }
+
     private String eventPath(String externalId) {
         if (externalId == null || externalId.isBlank()) throw new IllegalArgumentException("externalId is required");
         return "/events/" + java.net.URLEncoder.encode(externalId.trim(), StandardCharsets.UTF_8);
@@ -308,9 +552,9 @@ public final class MyScouteeClient {
 
     public record ConnectResponse(boolean connected, int maxBatchSize, String profileId,
             String profileName, String groupId, String groupName, List<String> operations,
-            List<IntegrationGroupScope> inviteGroups) {
+            List<IntegrationGroupScope> inviteGroups, String accessMode) {
         public ConnectResponse(boolean connected, int maxBatchSize) {
-            this(connected, maxBatchSize, null, null, null, null, List.of(), List.of());
+            this(connected, maxBatchSize, null, null, null, null, List.of(), List.of(), "write");
         }
     }
 

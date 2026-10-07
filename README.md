@@ -1,8 +1,8 @@
 # MyScoutee Java client
 
-Java 17 SDK and CLI for the profile-bound MyScoutee integration API (1.5.0).
+Java 17 SDK and CLI for the profile-bound MyScoutee integration API (1.6.0).
 
-The default Write pack retains asset/event/campaign creation, invitation links and managed-event reads. Write includes supported organizing commands through existing domain services; Full adds permitted application queries. Batch results retain the caller's `id` and the stable MyScoutee `externalId`.
+The default Write pack retains asset/event/campaign creation, invitation links and managed-event reads. Write includes supported organizing commands through existing domain services; Read adds permitted application queries. Batch results retain the caller's `id` and the stable MyScoutee `externalId`.
 
 ## Client slot and authentication
 
@@ -12,15 +12,15 @@ The CLI creates a persistent UUID on first configuration and sends it as `X-MySc
 
 The complete token is shown only once in MyScoutee. Treat the CLI configuration file as a secret.
 
-## Access packs and operations (MSC-116)
+## Access packs and operations (MSC-119)
 
-Set Blocked / Write / Full in the application's API settings. Each API client is
+Set Blocked / Write / Read / Full in the application's API settings. Each API client is
 independent; MCP clients are capped by the main MCP level. The combined parent
 settings save persists all staged choices at once. `connect` returns the effective
 `accessMode` and available `operations`; do not infer access from this documentation.
 Downgrades apply to subsequent requests, including an already connected client.
 
-Full reads cover visible events, groups, chats/messages, notifications and ratings;
+Read and Full queries cover visible events, groups, chats/messages, notifications and ratings;
 base-profile assets; Work campaigns/history; Community services, cases,
 announcements and scheduled tasks. Page size is bounded, and `nextCursor` is opaque.
 `eventDetails(id)` uses the internal app ID; existing `event(externalId)` retains
@@ -29,7 +29,7 @@ its original managed-event contract. Read results use existing domain DTOs.
 Write organizing commands are `updateCampaign`, `campaignAction`, `saveCase`,
 `caseAction`, `saveAnnouncement`, `announcementAction`, `saveScheduledTask`,
 `scheduledTaskAction` and `serviceAction`. Use the user's supplied current version or a prior receipt; read details only
-when Full permits that query. Normal membership, ownership and lifecycle checks apply. No caller-selected actor.
+when Read or Full permits that query. Normal membership, ownership and lifecycle checks apply. No caller-selected actor.
 
 Decisions requiring the person's own viewing/judgment stay in the application:
 ratings, interest, feedback, ballots, personal participation responses,
@@ -46,9 +46,9 @@ myscoutee-client command updateCampaign campaign-update.json campaign-id
 
 Query parameters are an optional JSON object. Commands use their documented JSON
 request and, for resource operations, a separate resource ID. JSON schemas and
-new writes return only ID, status and version. Broad details require Full. The
+new writes return only ID, status and version. Broad details require Read or Full. The
 per-domain command allowlists are in [openapi.yaml](openapi.yaml). The Java SDK has
-one method per operation; Full response payloads are returned as `JsonNode`.
+one method per operation; Query response payloads are returned as `JsonNode`.
 
 ## Build
 
@@ -323,3 +323,14 @@ myscoutee-client campaigns campaign.json
 ```
 
 Campaign listing and external publishing are not part of this contract.
+
+
+### MSC-119 role readers
+
+Four packs are Blocked / Write / Read / Full. Main MCP defaults to Blocked;
+client keys default to Write. Read includes organizing writes plus permitted reads;
+Full also enables OAuth MCP Events (not API-key callbacks). Role accounts expose
+read-only statistics, regardless of pack. Use `query adminOverview`,
+`query operatorMeasurements parameters.json` or `query operatorRevenueReports parameters.json`.
+Operator parameters: optional status, nonnegative page, size 1–100 (default 25).
+Current role and Read/Full are required. No role-control commands are exposed.

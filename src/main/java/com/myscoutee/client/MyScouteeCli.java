@@ -77,6 +77,9 @@ public final class MyScouteeCli {
         if (p == null || !p.isObject()) throw new IllegalArgumentException("Parameters must be a JSON object");
         var api = client();
         printJson(switch (args[1]) {
+            case "adminOverview" -> api.adminOverview();
+            case "operatorMeasurements" -> api.operatorMeasurements(p.path("status").asText(null), p.path("page").asInt(0), p.path("size").asInt(25));
+            case "operatorRevenueReports" -> api.operatorRevenueReports(p.path("status").asText(null), p.path("page").asInt(0), p.path("size").asInt(25));
             case "listEvents" -> api.listEvents(p.path("bucket").asText("events"), p.path("limit").asInt(20), p.path("cursor").asText(null));
             case "eventDetails" -> api.eventDetails(p.path("id").asText(null));
             case "listGroups" -> api.listGroups(p.path("bucket").asText("explore"), p.path("category").asText(null), p.path("limit").asInt(20), p.path("cursor").asText(null));

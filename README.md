@@ -1,6 +1,6 @@
 # MyScoutee Java client
 
-Java 17 SDK and CLI for the profile-bound MyScoutee integration API (1.6.0).
+Java 17 SDK and CLI for the profile-bound MyScoutee integration API. Current client release: **1.5.0**.
 
 The default Write pack retains asset/event/campaign creation, invitation links and managed-event reads. Write includes supported organizing commands through existing domain services; Read adds permitted application queries. Batch results retain the caller's `id` and the stable MyScoutee `externalId`.
 
@@ -334,3 +334,27 @@ read-only statistics, regardless of pack. Use `query adminOverview`,
 `query operatorMeasurements parameters.json` or `query operatorRevenueReports parameters.json`.
 Operator parameters: optional status, nonnegative page, size 1–100 (default 25).
 Current role and Read/Full are required. No role-control commands are exposed.
+
+## Package release
+
+Release `v1.5.0` publishes the SDK to GitHub Packages at
+`https://maven.pkg.github.com/fssrepository/myscoutee-client`:
+
+```groovy
+implementation 'com.myscoutee:myscoutee-client:1.5.0'
+```
+
+Configure authenticated repository access in the consuming build. The publication
+includes the SDK, sources, POM and Gradle module metadata. Jackson is exposed as
+an API dependency because the public SDK accepts and returns `JsonNode`.
+
+GitHub Releases also provides the staged Maven repository ZIP, standalone CLI
+ZIP/TAR distributions and SHA-256 checksums. Extract a CLI distribution and run
+`bin/myscoutee-client` with Java 17 or newer. Calling it without arguments prints
+usage without creating configuration or connecting to a server.
+
+Build and verify locally with the existing wrapper:
+
+```bash
+./gradlew --no-daemon check releaseArchive distZip distTar
+```

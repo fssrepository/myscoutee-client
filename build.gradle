@@ -1,10 +1,11 @@
 plugins {
     id 'application'
     id 'java-library'
+    id 'maven-publish'
 }
 
 group = 'com.myscoutee'
-version = '1.6.0'
+version = file('VERSION').text.trim()
 
 java {
     toolchain {
@@ -18,8 +19,8 @@ repositories {
 }
 
 dependencies {
-    implementation platform('com.fasterxml.jackson:jackson-bom:2.20.0')
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    api platform('com.fasterxml.jackson:jackson-bom:2.20.0')
+    api 'com.fasterxml.jackson.core:jackson-databind'
 
     testImplementation platform('org.junit:junit-bom:5.13.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -32,4 +33,52 @@ application {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// Reuse the base project's native Maven staging and GitHub Packages flow.
+publishing {
+    publications {
+        library(MavenPublication) {
+            from components.java
+            pom {
+                name = 'MyScoutee Java client'
+                description = 'Java SDK for the profile-bound MyScoutee integration API'
+                url = 'https://github.com/fssrepository/myscoutee-client'
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'staging'
+            url = layout.buildDirectory.dir('repository')
+        }
+        maven {
+            name = 'GitHubPackages'
+            url = uri('https://maven.pkg.github.com/fssrepository/myscoutee-client')
+            credentials {
+                username = providers.gradleProperty('gpr.user')
+                    .orElse(providers.environmentVariable('GITHUB_ACTOR')).orNull
+                password = providers.gradleProperty('gpr.key')
+                    .orElse(providers.environmentVariable('GITHUB_TOKEN')).orNull
+            }
+        }
+    }
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn tasks.named('check')
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.register('releaseArchive', Zip) {
+    group = 'publishing'
+    description = 'Archive the staged Maven publication at the release version.'
+    dependsOn 'publishLibraryPublicationToStagingRepository'
+    archiveFileName = "myscoutee-client-${version}-maven.zip"
+    destinationDirectory = layout.buildDirectory.dir('releases')
+    from(layout.buildDirectory.dir('repository')) { include "**/${version}/**" }
 }

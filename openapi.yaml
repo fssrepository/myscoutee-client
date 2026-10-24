@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: MyScoutee Integration API
-  version: 1.6.0
+  version: 1.5.0
   description: >-
     Profile-bound integration API with Blocked, Write, Read and Full access packs.
     Write retains existing batch creation, invitations and managed-event reads.

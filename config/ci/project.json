@@ -1,0 +1,10 @@
+{
+  "project": "myscoutee-client",
+  "type": "java-client",
+  "depends_on": [],
+  "variables": {
+    "LAB_GITHUB_REPOSITORY": "fssrepository/myscoutee-client"
+  },
+  "release_notes": "guides/releases/v{version}.md",
+  "release_name": "MyScoutee Client"
+}
